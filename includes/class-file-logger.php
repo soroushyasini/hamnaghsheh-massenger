@@ -54,7 +54,7 @@ class Hamnaghsheh_Massenger_File_Logger {
             return;
         }
 
-        $file_name = $file ? $file->file_name : 'فایل';
+        $file_name = $file ? esc_html($file->file_name) : 'فایل';
 
         // Generate Persian message
         $message = $this->generate_system_message($user->display_name, $action_type, $file_name);
