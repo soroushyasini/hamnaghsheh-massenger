@@ -76,8 +76,7 @@ class Hamnaghsheh_Massenger_File_Logger {
         }
 
         // Generate Persian message with actual filename
-        $filename = isset($file->file_name) ? esc_html($file->file_name) : 'فایل';
-        $message = $this->generate_system_message($user->display_name, $action_type, $filename);
+        $message = $this->generate_system_message($user->display_name, $action_type, esc_html($file->file_name));
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log("📝 Message text: $message");
