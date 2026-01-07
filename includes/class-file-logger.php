@@ -54,13 +54,17 @@ class Hamnaghsheh_Massenger_File_Logger {
         // Get file details
         $file = $this->get_file_by_id($file_id);
         if (!$file) {
-            error_log("❌ CRITICAL: File not found for ID $file_id - skipping chat message");
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("❌ CRITICAL: File not found for ID $file_id - skipping chat message");
+            }
             return; // File not found, skip
         }
 
         $user = get_userdata($user_id);
         if (!$user) {
-            error_log("❌ CRITICAL: User not found for ID $user_id");
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("❌ CRITICAL: User not found for ID $user_id");
+            }
             return;
         }
 
@@ -87,7 +91,7 @@ class Hamnaghsheh_Massenger_File_Logger {
             'message' => $message,
             'message_type' => 'system',
             'mentioned_file_id' => intval($file_id), // Ensure integer
-            'file_log_id' => $file_log_id ? intval($file_log_id) : null
+            'file_log_id' => !is_null($file_log_id) ? intval($file_log_id) : null
         ));
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
