@@ -411,14 +411,27 @@
      * Append a message to the chat
      */
     function appendMessage(message) {
+        // Check if message already exists to prevent duplicates
+        if ($('[data-message-id="' + message.id + '"]').length) {
+            return;
+        }
+        
         const messageHtml = buildMessageHtml(message);
-        $('.hamnaghsheh-chat-messages').append(messageHtml);
+        const chatBox = $('.hamnaghsheh-chat-messages');
+        
+        // Check if user is near bottom before appending
+        const isNearBottom = chatBox[0].scrollHeight - chatBox.scrollTop() <= chatBox.outerHeight() + 100;
+        
+        chatBox.append(messageHtml);
         
         if (message.id > lastMessageId) {
             lastMessageId = message.id;
         }
 
-        scrollToBottom();
+        // Only auto-scroll if user was near bottom
+        if (isNearBottom) {
+            scrollToBottom();
+        }
     }
 
     /**
@@ -456,7 +469,7 @@
         html += '<div class="hamnaghsheh-message-content">';
         html += '<div class="hamnaghsheh-message-text">' + escapeHtml(message.message) + '</div>';
         
-        if (message.is_edited) {
+        if (message.is_edited && !isSystem) {
             html += '<div class="hamnaghsheh-edited-label">' + hamnaghshehChat.strings.edited + '</div>';
         }
         
