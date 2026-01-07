@@ -577,7 +577,7 @@
             },
             success: function(response) {
                 if (response.success && response.data.files.length > 0) {
-                    showFileAutocomplete(response.data.files, atMatch.index);
+                    showFileAutocomplete(response.data.files);
                 } else {
                     $('.hamnaghsheh-file-autocomplete').removeClass('active');
                 }
@@ -588,7 +588,7 @@
     /**
      * Show file autocomplete dropdown
      */
-    function showFileAutocomplete(files, atPosition) {
+    function showFileAutocomplete(files) {
         let html = '<ul class="hamnaghsheh-autocomplete-list">';
         
         files.forEach(function(file) {
@@ -619,14 +619,11 @@
             return;
         }
         
-        const atPosition = atMatch.index;
+        const atPosition = textBeforeCursor.search(/@\S*$/);
         
         // Replace @ with file mention
         const newText = text.substring(0, atPosition) + '@' + fileName + ' ' + text.substring(cursorPos);
         input.val(newText);
-        
-        // Store file ID for mention (optional: could store in hidden field)
-        input.data('mentioned-file-id', fileId);
         
         $('.hamnaghsheh-file-autocomplete').removeClass('active');
         input.focus();
