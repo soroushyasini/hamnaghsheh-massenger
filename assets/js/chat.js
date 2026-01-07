@@ -83,10 +83,17 @@
         });
 
         // Select file from autocomplete
-        $(document).on('click', '.hamnaghsheh-file-item', function() {
-            const fileName = $(this).find('.hamnaghsheh-file-name').text();
+        $(document).on('click', '.hamnaghsheh-autocomplete-list li', function() {
+            const fileName = $(this).data('file-name');
             const fileId = $(this).data('file-id');
             insertFileMention(fileName, fileId);
+        });
+
+        // Hide autocomplete when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.hamnaghsheh-message-input, .hamnaghsheh-file-autocomplete').length) {
+                $('.hamnaghsheh-file-autocomplete').removeClass('active');
+            }
         });
     }
 
@@ -544,20 +551,20 @@
      * Handle file mention autocomplete
      */
     function handleFileAutocomplete(text) {
-        const atIndex = text.lastIndexOf('@');
+        const input = $('.hamnaghsheh-message-input')[0];
+        const cursorPos = input.selectionStart;
+        const textBeforeCursor = text.substring(0, cursorPos);
         
-        if (atIndex === -1) {
+        // Check if @ was typed
+        const atMatch = textBeforeCursor.match(/@(\S*)$/);
+        
+        if (!atMatch) {
             $('.hamnaghsheh-file-autocomplete').removeClass('active');
             return;
         }
 
-        const query = text.substring(atIndex + 1);
+        const query = atMatch[1];
         
-        if (query.length < 2) {
-            $('.hamnaghsheh-file-autocomplete').removeClass('active');
-            return;
-        }
-
         // Search files
         $.ajax({
             url: hamnaghshehChat.ajaxUrl,
@@ -570,7 +577,7 @@
             },
             success: function(response) {
                 if (response.success && response.data.files.length > 0) {
-                    showFileAutocomplete(response.data.files);
+                    showFileAutocomplete(response.data.files, atMatch.index);
                 } else {
                     $('.hamnaghsheh-file-autocomplete').removeClass('active');
                 }
@@ -581,15 +588,17 @@
     /**
      * Show file autocomplete dropdown
      */
-    function showFileAutocomplete(files) {
-        let html = '';
+    function showFileAutocomplete(files, atPosition) {
+        let html = '<ul class="hamnaghsheh-autocomplete-list">';
         
         files.forEach(function(file) {
-            html += '<div class="hamnaghsheh-file-item" data-file-id="' + file.id + '">';
-            html += '<span class="hamnaghsheh-file-name">' + escapeHtml(file.file_name) + '</span>';
-            html += '<span class="hamnaghsheh-file-size">(' + formatFileSize(file.file_size) + ')</span>';
-            html += '</div>';
+            html += '<li data-file-id="' + file.id + '" data-file-name="' + escapeHtml(file.file_name) + '">';
+            html += '<span class="file-name">' + escapeHtml(file.file_name) + '</span>';
+            html += '<span class="file-size">(' + formatFileSize(file.file_size) + ')</span>';
+            html += '</li>';
         });
+        
+        html += '</ul>';
 
         $('.hamnaghsheh-file-autocomplete').html(html).addClass('active');
     }
@@ -599,14 +608,32 @@
      */
     function insertFileMention(fileName, fileId) {
         const input = $('.hamnaghsheh-message-input');
+        const inputEl = input[0];
         const text = input.val();
-        const atIndex = text.lastIndexOf('@');
+        const cursorPos = inputEl.selectionStart;
+        const textBeforeCursor = text.substring(0, cursorPos);
         
-        const newText = text.substring(0, atIndex) + '@' + fileName + ' ';
+        // Find @ position
+        const atMatch = textBeforeCursor.match(/@(\S*)$/);
+        if (!atMatch) {
+            return;
+        }
+        
+        const atPosition = atMatch.index;
+        
+        // Replace @ with file mention
+        const newText = text.substring(0, atPosition) + '@' + fileName + ' ' + text.substring(cursorPos);
         input.val(newText);
+        
+        // Store file ID for mention (optional: could store in hidden field)
+        input.data('mentioned-file-id', fileId);
         
         $('.hamnaghsheh-file-autocomplete').removeClass('active');
         input.focus();
+        
+        // Set cursor after the inserted mention
+        const newCursorPos = atPosition + fileName.length + 2; // @ + filename + space
+        inputEl.setSelectionRange(newCursorPos, newCursorPos);
     }
 
     /**

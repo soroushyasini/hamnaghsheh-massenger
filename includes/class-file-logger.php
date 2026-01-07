@@ -48,19 +48,20 @@ class Hamnaghsheh_Massenger_File_Logger {
     public function inject_file_log_to_chat($file_id, $project_id, $user_id, $action_type) {
         // Get file details
         $file = $this->get_file_by_id($file_id);
-        $user = get_userdata($user_id);
+        if (!$file) {
+            return; // File not found, skip
+        }
 
+        $user = get_userdata($user_id);
         if (!$user) {
             return;
         }
 
-        $file_name = $file ? esc_html($file->file_name) : 'فایل';
-
-        // Generate Persian message
-        $message = $this->generate_system_message($user->display_name, $action_type, $file_name);
-
         // Get the file log ID
         $file_log_id = $this->get_last_file_log_id($file_id, $action_type);
+
+        // Generate Persian message with actual filename
+        $message = $this->generate_system_message($user->display_name, $action_type, esc_html($file->file_name));
 
         // Insert system message
         Hamnaghsheh_Massenger_Messages::insert_message(array(
@@ -92,7 +93,8 @@ class Hamnaghsheh_Massenger_File_Logger {
 
         $action_label = isset($actions_fa[$action_type]) ? $actions_fa[$action_type] : $action_type;
 
-        return sprintf('%s %s %s', $user_name, $action_label, $file_name);
+        // Format: [Username] فایل [filename] را [action]
+        return sprintf('%s فایل %s را %s', $user_name, $file_name, $action_label);
     }
 
     /**
