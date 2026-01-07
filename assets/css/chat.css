@@ -103,6 +103,8 @@
     background: #f5f5f5;
     display: flex;
     flex-direction: column;
+    direction: rtl;
+    text-align: right;
 }
 
 .hamnaghsheh-chat-messages::-webkit-scrollbar {
@@ -144,6 +146,8 @@
 .hamnaghsheh-message {
     margin-bottom: 15px;
     animation: slideIn 0.3s ease;
+    direction: rtl;
+    text-align: right;
 }
 
 @keyframes slideIn {
@@ -163,6 +167,7 @@
     margin-bottom: 5px;
     font-size: 12px;
     color: #666;
+    direction: rtl;
 }
 
 .hamnaghsheh-message-user {
@@ -172,6 +177,7 @@
 
 .hamnaghsheh-message-time {
     color: #999;
+    order: -1; /* Move to left in RTL */
 }
 
 .hamnaghsheh-message-content {
@@ -181,6 +187,8 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     position: relative;
     word-wrap: break-word;
+    direction: rtl;
+    text-align: right;
 }
 
 /* System Message Styles */
@@ -194,9 +202,13 @@
     color: #2196f3;
 }
 
+.hamnaghsheh-message.system .hamnaghsheh-message-header {
+    direction: rtl;
+}
+
+/* Hide system icons - NO ICONS */
 .hamnaghsheh-system-icon {
-    margin-left: 8px;
-    font-size: 16px;
+    display: none !important;
 }
 
 /* Message Actions */
@@ -242,6 +254,8 @@
     display: flex;
     gap: 10px;
     align-items: center;
+    position: relative;
+    direction: rtl;
 }
 
 .hamnaghsheh-chat-input textarea {
@@ -253,6 +267,7 @@
     resize: none;
     font-family: 'IRANSans', Tahoma, Arial, sans-serif;
     direction: rtl;
+    text-align: right;
     max-height: 100px;
 }
 
@@ -289,8 +304,8 @@
 .hamnaghsheh-file-autocomplete {
     position: absolute;
     bottom: 100%;
-    right: 20px;
-    left: 20px;
+    right: 0;
+    left: 0;
     background: white;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -298,35 +313,45 @@
     max-height: 200px;
     overflow-y: auto;
     display: none;
+    z-index: 1000;
+    direction: rtl;
 }
 
 .hamnaghsheh-file-autocomplete.active {
     display: block;
 }
 
-.hamnaghsheh-file-item {
+.hamnaghsheh-autocomplete-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.hamnaghsheh-autocomplete-list li {
     padding: 10px 15px;
     cursor: pointer;
     border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.hamnaghsheh-file-item:hover {
+.hamnaghsheh-autocomplete-list li:hover {
     background: #f5f5f5;
 }
 
-.hamnaghsheh-file-item:last-child {
+.hamnaghsheh-autocomplete-list li:last-child {
     border-bottom: none;
 }
 
-.hamnaghsheh-file-name {
-    font-weight: bold;
-    color: #333;
+.hamnaghsheh-autocomplete-list .file-name {
+    font-weight: 600;
+    color: #09375B;
 }
 
-.hamnaghsheh-file-size {
+.hamnaghsheh-autocomplete-list .file-size {
     font-size: 12px;
-    color: #999;
-    margin-right: 10px;
+    color: #666;
 }
 
 /* Edit Mode */
