@@ -44,9 +44,24 @@ class Hamnaghsheh_Massenger_Messages {
 
         $result = $wpdb->insert(
             $table,
-            $data,
+            array(
+                'project_id' => intval($data['project_id']),
+                'user_id' => intval($data['user_id']),
+                'message' => $data['message'],
+                'message_type' => $data['message_type'],
+                'mentioned_file_id' => $data['mentioned_file_id'] ? intval($data['mentioned_file_id']) : null,
+                'file_log_id' => $data['file_log_id'] ? intval($data['file_log_id']) : null,
+                'is_edited' => intval($data['is_edited']),
+                'edited_at' => $data['edited_at'],
+                'created_at' => $data['created_at']
+            ),
             array('%d', '%d', '%s', '%s', '%d', '%d', '%d', '%s', '%s')
         );
+
+        if (defined('WP_DEBUG') && WP_DEBUG && $result === false) {
+            error_log("❌ Message insert failed: " . $wpdb->last_error);
+            error_log("Data: " . print_r($data, true));
+        }
 
         if ($result === false) {
             return false;
