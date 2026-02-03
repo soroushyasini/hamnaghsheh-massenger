@@ -66,7 +66,7 @@ class Hamnaghsheh_Messenger_Installer {
             INDEX idx_project_time (project_id, created_at),
             INDEX idx_user (user_id),
             INDEX idx_deleted (deleted_at)
-        ) ENGINE=MyISAM $charset_collate;";
+        ) ENGINE=InnoDB $charset_collate;";
         
         // Table 2: Read status (CRITICAL for "seen by")
         $sql_reads = "CREATE TABLE {$prefix}hamnaghsheh_chat_reads (
@@ -78,7 +78,7 @@ class Hamnaghsheh_Messenger_Installer {
             UNIQUE KEY unique_read (message_id, user_id),
             INDEX idx_user (user_id),
             INDEX idx_message (message_id)
-        ) ENGINE=MyISAM $charset_collate;";
+        ) ENGINE=InnoDB $charset_collate;";
         
         // Table 3: Typing indicators
         $sql_typing = "CREATE TABLE {$prefix}hamnaghsheh_chat_typing (
@@ -87,7 +87,7 @@ class Hamnaghsheh_Messenger_Installer {
             last_typed_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             
             PRIMARY KEY (project_id, user_id)
-        ) ENGINE=MyISAM $charset_collate;";
+        ) ENGINE=InnoDB $charset_collate;";
         
         // Execute table creation
         dbDelta($sql_messages);

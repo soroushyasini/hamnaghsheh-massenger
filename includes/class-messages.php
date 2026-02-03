@@ -156,24 +156,40 @@ class Hamnaghsheh_Messenger_Messages {
     public static function get_messages($project_id, $last_id = 0, $limit = 50) {
         global $wpdb;
         
-        $where = $wpdb->prepare(
-            "project_id = %d AND deleted_at IS NULL",
-            $project_id
-        );
+        // Sanitize inputs
+        $project_id = absint($project_id);
+        $last_id = absint($last_id);
+        $limit = absint($limit);
         
-        if ($last_id > 0) {
-            $where .= $wpdb->prepare(" AND id > %d", $last_id);
+        if ($limit <= 0) {
+            $limit = 50;
         }
         
-        $messages = $wpdb->get_results(
-            "SELECT m.*, u.display_name, u.user_email
-            FROM {$wpdb->prefix}hamnaghsheh_chat_messages m
-            LEFT JOIN {$wpdb->users} u ON m.user_id = u.ID
-            WHERE {$where}
-            ORDER BY m.created_at ASC
-            LIMIT %d",
-            $limit
-        );
+        // Build query with proper placeholders
+        if ($last_id > 0) {
+            $messages = $wpdb->get_results($wpdb->prepare(
+                "SELECT m.*, u.display_name, u.user_email
+                FROM {$wpdb->prefix}hamnaghsheh_chat_messages m
+                LEFT JOIN {$wpdb->users} u ON m.user_id = u.ID
+                WHERE m.project_id = %d AND m.deleted_at IS NULL AND m.id > %d
+                ORDER BY m.created_at ASC
+                LIMIT %d",
+                $project_id,
+                $last_id,
+                $limit
+            ));
+        } else {
+            $messages = $wpdb->get_results($wpdb->prepare(
+                "SELECT m.*, u.display_name, u.user_email
+                FROM {$wpdb->prefix}hamnaghsheh_chat_messages m
+                LEFT JOIN {$wpdb->users} u ON m.user_id = u.ID
+                WHERE m.project_id = %d AND m.deleted_at IS NULL
+                ORDER BY m.created_at ASC
+                LIMIT %d",
+                $project_id,
+                $limit
+            ));
+        }
         
         // Add seen_by data to each message
         foreach ($messages as &$message) {
