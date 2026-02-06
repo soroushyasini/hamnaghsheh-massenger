@@ -15,6 +15,41 @@ class Hamnaghsheh_Messenger_Permissions {
     }
     
     /**
+     * Get project owner ID
+     * 
+     * @param int $project_id
+     * @return int|null Owner user ID or null if project not found
+     */
+    private static function get_project_owner_id($project_id) {
+        global $wpdb;
+        
+        $owner_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT user_id FROM {$wpdb->prefix}hamnaghsheh_projects WHERE id = %d",
+            $project_id
+        ));
+        
+        return $owner_id ? (int)$owner_id : null;
+    }
+    
+    /**
+     * Get user's assignment permission for a project
+     * 
+     * @param int $project_id
+     * @param int $user_id
+     * @return string|null Permission level ('upload' or 'view') or null if not assigned
+     */
+    private static function get_user_assignment_permission($project_id, $user_id) {
+        global $wpdb;
+        
+        return $wpdb->get_var($wpdb->prepare(
+            "SELECT permission FROM {$wpdb->prefix}hamnaghsheh_project_assignments 
+             WHERE project_id = %d AND user_id = %d",
+            $project_id,
+            $user_id
+        ));
+    }
+    
+    /**
      * Check if user can access chat in a project
      * 
      * @param int $project_id
@@ -28,13 +63,8 @@ class Hamnaghsheh_Messenger_Permissions {
             return false;
         }
         
-        global $wpdb;
-        
         // Check if user is the project owner
-        $owner_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT user_id FROM {$wpdb->prefix}hamnaghsheh_projects WHERE id = %d",
-            $project_id
-        ));
+        $owner_id = self::get_project_owner_id($project_id);
         
         if (!$owner_id) {
             error_log('🔐 Chat permission: Project not found');
@@ -42,21 +72,16 @@ class Hamnaghsheh_Messenger_Permissions {
         }
         
         // Owner has full access
-        if ((int)$owner_id === (int)$user_id) {
+        if ($owner_id === (int)$user_id) {
             error_log("🔐 Chat permission: User $user_id is OWNER of project $project_id - ALLOWED");
             return true;
         }
         
         // Check if user is assigned to the project
-        $assignment = $wpdb->get_row($wpdb->prepare(
-            "SELECT permission FROM {$wpdb->prefix}hamnaghsheh_project_assignments 
-             WHERE project_id = %d AND user_id = %d",
-            $project_id,
-            $user_id
-        ));
+        $permission = self::get_user_assignment_permission($project_id, $user_id);
         
-        if ($assignment) {
-            error_log("🔐 Chat permission: User $user_id assigned to project $project_id with permission '{$assignment->permission}' - ALLOWED");
+        if ($permission) {
+            error_log("🔐 Chat permission: User $user_id assigned to project $project_id with permission '$permission' - ALLOWED");
             // Assigned users (both 'upload' and 'view') can chat
             return true;
         }
@@ -77,25 +102,15 @@ class Hamnaghsheh_Messenger_Permissions {
             return false;
         }
         
-        global $wpdb;
-        
         // Check if owner
-        $owner_id = $wpdb->get_var($wpdb->prepare(
-            "SELECT user_id FROM {$wpdb->prefix}hamnaghsheh_projects WHERE id = %d",
-            $project_id
-        ));
+        $owner_id = self::get_project_owner_id($project_id);
         
-        if ($owner_id && (int)$owner_id === (int)$user_id) {
+        if ($owner_id && $owner_id === (int)$user_id) {
             return true; // Owner can always send
         }
         
         // Check assignment permission
-        $permission = $wpdb->get_var($wpdb->prepare(
-            "SELECT permission FROM {$wpdb->prefix}hamnaghsheh_project_assignments 
-             WHERE project_id = %d AND user_id = %d",
-            $project_id,
-            $user_id
-        ));
+        $permission = self::get_user_assignment_permission($project_id, $user_id);
         
         // Only 'upload' permission can send messages, 'view' is read-only
         return $permission === 'upload';
