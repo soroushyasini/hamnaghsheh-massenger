@@ -82,7 +82,8 @@ class Hamnaghsheh_Messenger_Permissions {
         
         if ($permission) {
             error_log("🔐 Chat permission: User $user_id assigned to project $project_id with permission '$permission' - ALLOWED");
-            // Assigned users (both 'upload' and 'view') can chat
+            // Assigned users can access chat (both 'upload' and 'view')
+            // Note: 'view' users have read-only access (enforced in can_send_message)
             return true;
         }
         
@@ -127,7 +128,7 @@ class Hamnaghsheh_Messenger_Permissions {
         global $wpdb;
         
         $message = $wpdb->get_row($wpdb->prepare(
-            "SELECT user_id, created_at FROM {$wpdb->prefix}hamnaghsheh_chat_messages 
+            "SELECT user_id, created_at, message_type FROM {$wpdb->prefix}hamnaghsheh_chat_messages 
              WHERE id = %d AND deleted_at IS NULL",
             $message_id
         ));
@@ -138,6 +139,11 @@ class Hamnaghsheh_Messenger_Permissions {
         
         // Must be message owner
         if ((int)$message->user_id !== (int)$user_id) {
+            return false;
+        }
+        
+        // System messages can't be edited (only 'text' type can be edited)
+        if ($message->message_type !== 'text') {
             return false;
         }
         
