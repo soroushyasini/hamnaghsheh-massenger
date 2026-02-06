@@ -63,3 +63,7 @@ $unread_count = Hamnaghsheh_Messenger_Notifications::get_project_unread($project
     </div>
     
 </div>
+
+<script>
+console.log('✅ Chat template loaded for project', <?php echo intval($project_id); ?>);
+</script>

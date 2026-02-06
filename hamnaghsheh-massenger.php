@@ -235,14 +235,68 @@ final class Hamnaghsheh_Messenger {
     }
     
     /**
-     * Render chat UI
+     * Show debug message (only when WP_DEBUG is enabled)
+     * 
+     * @param string $message Message text
+     * @param string $type Type: 'error', 'warning', 'info'
      */
-    public function render_chat_ui($project_id, $project = null) {
-        if (!Hamnaghsheh_Messenger_Permissions::can_user_chat($project_id, get_current_user_id())) {
+    private function show_debug_message($message, $type = 'error') {
+        if (!defined('WP_DEBUG') || !WP_DEBUG) {
             return;
         }
         
-        include HAMNAGHSHEH_MESSENGER_DIR . 'templates/chat-container.php';
+        $colors = [
+            'error' => '#d63638',
+            'warning' => '#dba617',
+            'info' => '#00a0d2',
+        ];
+        
+        $icons = [
+            'error' => '❌',
+            'warning' => '⚠️',
+            'info' => 'ℹ️',
+        ];
+        
+        $bg_color = isset($colors[$type]) ? $colors[$type] : $colors['error'];
+        $icon = isset($icons[$type]) ? $icons[$type] : $icons['error'];
+        
+        echo '<div role="alert" style="position:fixed;bottom:20px;right:20px;background:' . esc_attr($bg_color) . ';color:white;padding:10px;z-index:9999;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">';
+        echo '<strong>' . esc_html($icon) . ' Chat Debug:</strong> ' . esc_html($message);
+        echo '</div>';
+    }
+    
+    /**
+     * Render chat UI
+     */
+    public function render_chat_ui($project_id, $project = null) {
+        // Debug logging
+        error_log('🎯 Chat render called for project: ' . $project_id);
+        
+        $user_id = get_current_user_id();
+        error_log('👤 Current user: ' . $user_id);
+        
+        // Check permission
+        $can_chat = Hamnaghsheh_Messenger_Permissions::can_user_chat($project_id, $user_id);
+        error_log('🔐 Can user chat: ' . ($can_chat ? 'YES' : 'NO'));
+        
+        if (!$can_chat) {
+            error_log('❌ Permission denied for user ' . $user_id . ' on project ' . $project_id);
+            $this->show_debug_message('Permission Denied', 'error');
+            return;
+        }
+        
+        $template_path = HAMNAGHSHEH_MESSENGER_DIR . 'templates/chat-container.php';
+        error_log('📄 Template path: ' . $template_path);
+        error_log('📂 Template exists: ' . (file_exists($template_path) ? 'YES' : 'NO'));
+        
+        if (!file_exists($template_path)) {
+            error_log('❌ Template file missing!');
+            $this->show_debug_message('Template Missing', 'warning');
+            return;
+        }
+        
+        error_log('✅ Rendering chat template');
+        include $template_path;
     }
     
     /**
