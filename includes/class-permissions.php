@@ -1,28 +1,12 @@
 <?php
-/**
- * Permissions class - handles access control
- *
- * @package Hamnaghsheh_Messenger
- */
-
-// Exit if accessed directly
 if (!defined('ABSPATH')) {
     exit;
 }
 
-/**
- * Permissions class
- */
 class Hamnaghsheh_Messenger_Permissions {
     
-    /**
-     * Single instance
-     */
     private static $instance = null;
     
-    /**
-     * Get instance
-     */
     public static function get_instance() {
         if (null === self::$instance) {
             self::$instance = new self();
@@ -31,128 +15,132 @@ class Hamnaghsheh_Messenger_Permissions {
     }
     
     /**
-     * Constructor
-     */
-    private function __construct() {
-        // Constructor
-    }
-    
-    /**
-     * Check if user can access chat (view only)
-     *
-     * @param int $project_id Project ID
-     * @param int $user_id User ID
+     * Check if user can access chat in a project
+     * 
+     * @param int $project_id
+     * @param int $user_id
      * @return bool
      */
     public static function can_user_chat($project_id, $user_id) {
+        // Must be logged in
         if (!$user_id) {
             error_log('🔐 Chat permission: User not logged in');
             return false;
         }
         
-        // Check if main plugin function exists
-        if (!class_exists('Hamnaghsheh_Projects')) {
-            error_log('🔐 Chat permission: Main plugin class not found');
+        global $wpdb;
+        
+        // Check if user is the project owner
+        $owner_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT user_id FROM {$wpdb->prefix}hamnaghsheh_projects WHERE id = %d",
+            $project_id
+        ));
+        
+        if (!$owner_id) {
+            error_log('🔐 Chat permission: Project not found');
             return false;
         }
         
-        // Check if user is owner or assigned
-        $permission = self::get_user_permission($project_id, $user_id);
+        // Owner has full access
+        if ($owner_id == $user_id) {
+            error_log("🔐 Chat permission: User $user_id is OWNER of project $project_id - ALLOWED");
+            return true;
+        }
         
-        error_log("🔐 Chat permission check: User $user_id, Project $project_id, Permission: " . ($permission ?: 'NONE'));
+        // Check if user is assigned to the project
+        $assignment = $wpdb->get_row($wpdb->prepare(
+            "SELECT permission FROM {$wpdb->prefix}hamnaghsheh_project_assignments 
+             WHERE project_id = %d AND user_id = %d",
+            $project_id,
+            $user_id
+        ));
         
-        return $permission !== false;
+        if ($assignment) {
+            error_log("🔐 Chat permission: User $user_id assigned to project $project_id with permission '{$assignment->permission}' - ALLOWED");
+            // Assigned users (both 'upload' and 'view') can chat
+            return true;
+        }
+        
+        error_log("🔐 Chat permission: User $user_id has NO ACCESS to project $project_id - DENIED");
+        return false;
     }
     
     /**
-     * Check if user can send messages
-     *
-     * @param int $project_id Project ID
-     * @param int $user_id User ID
+     * Check if user can send messages (not just read)
+     * 
+     * @param int $project_id
+     * @param int $user_id
      * @return bool
      */
     public static function can_send_message($project_id, $user_id) {
-        if (!$user_id) {
-            return false;
-        }
-        
-        $permission = self::get_user_permission($project_id, $user_id);
-        
-        // Only owner or upload permission can send
-        return in_array($permission, ['owner', 'upload'], true);
-    }
-    
-    /**
-     * Check if user can edit message
-     *
-     * @param int $message_id Message ID
-     * @param int $user_id User ID
-     * @return bool
-     */
-    public static function can_edit_message($message_id, $user_id) {
-        if (!$user_id) {
+        if (!self::can_user_chat($project_id, $user_id)) {
             return false;
         }
         
         global $wpdb;
         
+        // Check if owner
+        $owner_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT user_id FROM {$wpdb->prefix}hamnaghsheh_projects WHERE id = %d",
+            $project_id
+        ));
+        
+        if ($owner_id && $owner_id == $user_id) {
+            return true; // Owner can always send
+        }
+        
+        // Check assignment permission
+        $permission = $wpdb->get_var($wpdb->prepare(
+            "SELECT permission FROM {$wpdb->prefix}hamnaghsheh_project_assignments 
+             WHERE project_id = %d AND user_id = %d",
+            $project_id,
+            $user_id
+        ));
+        
+        // Only 'upload' permission can send messages, 'view' is read-only
+        return $permission === 'upload';
+    }
+    
+    /**
+     * Check if user can edit a message
+     * 
+     * @param int $message_id
+     * @param int $user_id
+     * @return bool
+     */
+    public static function can_edit_message($message_id, $user_id) {
+        global $wpdb;
+        
         $message = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$wpdb->prefix}hamnaghsheh_chat_messages 
-            WHERE id = %d AND deleted_at IS NULL",
+            "SELECT user_id, created_at FROM {$wpdb->prefix}hamnaghsheh_chat_messages 
+             WHERE id = %d AND deleted_at IS NULL",
             $message_id
         ));
         
-        if (!$message || (int)$message->user_id !== (int)$user_id) {
-            return false; // Not message owner
-        }
-        
-        // System messages can't be edited
-        if ($message->message_type !== 'text') {
+        if (!$message) {
             return false;
         }
         
-        // Can edit within 15 minutes
+        // Must be message owner
+        if ($message->user_id != $user_id) {
+            return false;
+        }
+        
+        // Can only edit within 15 minutes
         $time_diff = time() - strtotime($message->created_at);
         return $time_diff < (15 * 60);
     }
     
     /**
-     * Check if user can delete message
-     *
-     * @param int $message_id Message ID
-     * @param int $user_id User ID
+     * Check if user can delete a message
+     * 
+     * @param int $message_id
+     * @param int $user_id
      * @return bool
      */
     public static function can_delete_message($message_id, $user_id) {
-        // Same rules as edit
+        // Same rules as edit for now
         return self::can_edit_message($message_id, $user_id);
-    }
-    
-    /**
-     * Get user permission for project
-     *
-     * @param int $project_id Project ID
-     * @param int $user_id User ID
-     * @return string|bool Permission level or false
-     */
-    private static function get_user_permission($project_id, $user_id) {
-        // Try to use main plugin's permission function
-        if (class_exists('Hamnaghsheh_Projects') && method_exists('Hamnaghsheh_Projects', 'get_user_project_permission')) {
-            return Hamnaghsheh_Projects::get_user_project_permission($project_id, $user_id);
-        }
-        
-        // Fallback: check if user is the project owner
-        // This is a basic fallback - the main plugin should provide the proper method
-        $project = get_post($project_id);
-        if (!$project) {
-            return false;
-        }
-        
-        if ((int)$project->post_author === (int)$user_id) {
-            return 'owner';
-        }
-        
-        return false;
     }
     
     /**
