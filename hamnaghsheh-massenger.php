@@ -235,6 +235,37 @@ final class Hamnaghsheh_Messenger {
     }
     
     /**
+     * Show debug message (only when WP_DEBUG is enabled)
+     * 
+     * @param string $message Message text
+     * @param string $type Type: 'error', 'warning', 'info'
+     */
+    private function show_debug_message($message, $type = 'error') {
+        if (!defined('WP_DEBUG') || !WP_DEBUG) {
+            return;
+        }
+        
+        $colors = [
+            'error' => '#d63638',
+            'warning' => '#dba617',
+            'info' => '#00a0d2',
+        ];
+        
+        $icons = [
+            'error' => '❌',
+            'warning' => '⚠️',
+            'info' => 'ℹ️',
+        ];
+        
+        $bg_color = isset($colors[$type]) ? $colors[$type] : $colors['error'];
+        $icon = isset($icons[$type]) ? $icons[$type] : $icons['error'];
+        
+        echo '<div role="alert" style="position:fixed;bottom:20px;right:20px;background:' . esc_attr($bg_color) . ';color:white;padding:10px;z-index:9999;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">';
+        echo '<strong>' . esc_html($icon) . ' Chat Debug:</strong> ' . esc_html($message);
+        echo '</div>';
+    }
+    
+    /**
      * Render chat UI
      */
     public function render_chat_ui($project_id, $project = null) {
@@ -250,11 +281,7 @@ final class Hamnaghsheh_Messenger {
         
         if (!$can_chat) {
             error_log('❌ Permission denied for user ' . $user_id . ' on project ' . $project_id);
-            
-            // Show debug message in development mode
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                echo '<div style="position:fixed;bottom:20px;right:20px;background:red;color:white;padding:10px;z-index:9999;">Chat: Permission Denied</div>';
-            }
+            $this->show_debug_message('Permission Denied', 'error');
             return;
         }
         
@@ -264,10 +291,7 @@ final class Hamnaghsheh_Messenger {
         
         if (!file_exists($template_path)) {
             error_log('❌ Template file missing!');
-            
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                echo '<div style="position:fixed;bottom:20px;right:20px;background:orange;color:white;padding:10px;z-index:9999;">Chat: Template Missing</div>';
-            }
+            $this->show_debug_message('Template Missing', 'warning');
             return;
         }
         
