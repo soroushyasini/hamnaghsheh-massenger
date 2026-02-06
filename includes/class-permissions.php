@@ -42,7 +42,7 @@ class Hamnaghsheh_Messenger_Permissions {
         }
         
         // Owner has full access
-        if ($owner_id == $user_id) {
+        if ((int)$owner_id === (int)$user_id) {
             error_log("🔐 Chat permission: User $user_id is OWNER of project $project_id - ALLOWED");
             return true;
         }
@@ -85,7 +85,7 @@ class Hamnaghsheh_Messenger_Permissions {
             $project_id
         ));
         
-        if ($owner_id && $owner_id == $user_id) {
+        if ($owner_id && (int)$owner_id === (int)$user_id) {
             return true; // Owner can always send
         }
         
@@ -122,7 +122,7 @@ class Hamnaghsheh_Messenger_Permissions {
         }
         
         // Must be message owner
-        if ($message->user_id != $user_id) {
+        if ((int)$message->user_id !== (int)$user_id) {
             return false;
         }
         
