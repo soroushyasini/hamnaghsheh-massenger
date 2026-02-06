@@ -46,16 +46,20 @@ class Hamnaghsheh_Messenger_Permissions {
      */
     public static function can_user_chat($project_id, $user_id) {
         if (!$user_id) {
+            error_log('🔐 Chat permission: User not logged in');
             return false;
         }
         
         // Check if main plugin function exists
         if (!class_exists('Hamnaghsheh_Projects')) {
+            error_log('🔐 Chat permission: Main plugin class not found');
             return false;
         }
         
         // Check if user is owner or assigned
         $permission = self::get_user_permission($project_id, $user_id);
+        
+        error_log("🔐 Chat permission check: User $user_id, Project $project_id, Permission: " . ($permission ?: 'NONE'));
         
         return $permission !== false;
     }

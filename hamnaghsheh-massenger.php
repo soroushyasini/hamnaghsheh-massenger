@@ -238,11 +238,41 @@ final class Hamnaghsheh_Messenger {
      * Render chat UI
      */
     public function render_chat_ui($project_id, $project = null) {
-        if (!Hamnaghsheh_Messenger_Permissions::can_user_chat($project_id, get_current_user_id())) {
+        // Debug logging
+        error_log('🎯 Chat render called for project: ' . $project_id);
+        
+        $user_id = get_current_user_id();
+        error_log('👤 Current user: ' . $user_id);
+        
+        // Check permission
+        $can_chat = Hamnaghsheh_Messenger_Permissions::can_user_chat($project_id, $user_id);
+        error_log('🔐 Can user chat: ' . ($can_chat ? 'YES' : 'NO'));
+        
+        if (!$can_chat) {
+            error_log('❌ Permission denied for user ' . $user_id . ' on project ' . $project_id);
+            
+            // Show debug message in development mode
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                echo '<div style="position:fixed;bottom:20px;right:20px;background:red;color:white;padding:10px;z-index:9999;">Chat: Permission Denied</div>';
+            }
             return;
         }
         
-        include HAMNAGHSHEH_MESSENGER_DIR . 'templates/chat-container.php';
+        $template_path = HAMNAGHSHEH_MESSENGER_DIR . 'templates/chat-container.php';
+        error_log('📄 Template path: ' . $template_path);
+        error_log('📂 Template exists: ' . (file_exists($template_path) ? 'YES' : 'NO'));
+        
+        if (!file_exists($template_path)) {
+            error_log('❌ Template file missing!');
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                echo '<div style="position:fixed;bottom:20px;right:20px;background:orange;color:white;padding:10px;z-index:9999;">Chat: Template Missing</div>';
+            }
+            return;
+        }
+        
+        error_log('✅ Rendering chat template');
+        include $template_path;
     }
     
     /**
