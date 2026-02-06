@@ -1,0 +1,183 @@
+/**
+ * Hamnaghsheh Messenger - Desktop CSS
+ * Desktop-specific styles and responsive breakpoints
+ */
+
+/* Desktop Breakpoint */
+@media (min-width: 768px) {
+    
+    /* Floating Button - smaller on desktop */
+    .chat-fab {
+        bottom: 30px;
+        right: 30px;
+        width: 56px;
+        height: 56px;
+    }
+    
+    /* Chat Overlay - windowed on desktop */
+    .chat-overlay {
+        top: auto;
+        left: auto;
+        right: 30px;
+        bottom: 100px;
+        width: 400px;
+        height: 600px;
+        max-height: calc(100vh - 150px);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+    }
+    
+    /* Header adjustments */
+    .chat-header {
+        padding: 12px 16px;
+    }
+    
+    .chat-header h3 {
+        font-size: 16px;
+    }
+    
+    /* Messages - better spacing */
+    .message-bubble {
+        max-width: 75%;
+    }
+    
+    /* Message Content - hover effects */
+    .message-content {
+        transition: box-shadow 0.2s ease;
+    }
+    
+    .message-bubble:hover .message-content {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Show message actions on hover */
+    .message-actions {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    
+    .message-bubble:hover .message-actions {
+        opacity: 1;
+    }
+    
+    /* Input adjustments */
+    .chat-input-wrapper {
+        padding: 12px 16px;
+    }
+    
+    .chat-input-wrapper textarea {
+        font-size: 14px;
+    }
+    
+    /* Scrollbar styling */
+    .chat-messages::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+    
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+}
+
+/* Large Desktop */
+@media (min-width: 1200px) {
+    
+    /* Larger chat window */
+    .chat-overlay {
+        width: 450px;
+        height: 650px;
+    }
+    
+    /* More spacing for messages */
+    .chat-messages {
+        padding: 20px;
+    }
+    
+    .message-bubble {
+        max-width: 70%;
+    }
+}
+
+/* Tablet Landscape */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+    
+    .chat-overlay {
+        width: 380px;
+        height: 500px;
+        max-height: calc(100vh - 120px);
+    }
+}
+
+/* Print Styles */
+@media print {
+    
+    .chat-fab,
+    .chat-overlay {
+        display: none !important;
+    }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    
+    .chat-fab {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
+    
+    .message-content {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+}
+
+/* Dark Mode Support (future) */
+@media (prefers-color-scheme: dark) {
+    
+    /* Dark mode styles can be added here in future */
+    /* For now, keeping light theme */
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .typing-dots span {
+        animation: none;
+    }
+}
+
+/* Focus Styles for Keyboard Navigation */
+@media (min-width: 768px) {
+    
+    .chat-fab:focus {
+        outline: 2px solid #0073aa;
+        outline-offset: 2px;
+    }
+    
+    .chat-close:focus,
+    .chat-input-wrapper button:focus {
+        outline: 2px solid #fff;
+        outline-offset: 2px;
+    }
+    
+    .message-actions button:focus {
+        outline: 2px solid #0073aa;
+        outline-offset: 2px;
+    }
+}
