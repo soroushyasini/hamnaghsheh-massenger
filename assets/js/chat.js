@@ -321,7 +321,11 @@
         
         // Store raw message for editing (without HTML rendering)
         if (!isSystem && msg.message) {
-            $message.attr('data-message-raw', msg.message.replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'));
+            // Use DOM parser for proper HTML decoding to avoid XSS
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = msg.message;
+            const rawText = tempDiv.textContent || tempDiv.innerText || '';
+            $message.attr('data-message-raw', rawText);
         }
         
         if (isSystem) {
