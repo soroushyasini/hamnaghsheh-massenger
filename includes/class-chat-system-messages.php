@@ -19,29 +19,28 @@ class HMChat_System_Messages {
     private static $dedup_window = 300; // 5 minutes
     
     /**
+     * Add custom cron schedule for 10 minutes
+     */
+    public static function add_cron_schedule($schedules) {
+        if (!isset($schedules['hmchat_10min'])) {
+            $schedules['hmchat_10min'] = array(
+                'interval' => 600, // 10 minutes
+                'display' => __('Every 10 Minutes', 'hamnaghsheh-messenger')
+            );
+        }
+        return $schedules;
+    }
+    
+    /**
      * Initialize hooks
      */
     public static function init() {
-        // Register custom cron schedule first
-        add_filter('cron_schedules', array(__CLASS__, 'add_cron_schedule'));
-        
         // Schedule cron job for digest generation every 10 minutes
         if (!wp_next_scheduled('hmchat_generate_digests')) {
             wp_schedule_event(time(), 'hmchat_10min', 'hmchat_generate_digests');
         }
         
         add_action('hmchat_generate_digests', array(__CLASS__, 'generate_daily_digests'));
-    }
-    
-    /**
-     * Add custom cron schedule for 10 minutes
-     */
-    public static function add_cron_schedule($schedules) {
-        $schedules['hmchat_10min'] = array(
-            'interval' => 600, // 10 minutes
-            'display' => __('Every 10 Minutes', 'hamnaghsheh-messenger')
-        );
-        return $schedules;
     }
     
     /**
@@ -132,11 +131,12 @@ class HMChat_System_Messages {
                     continue;
                 }
                 
-                // Get user display name
+                // Get user display name and sanitize
                 $user = get_userdata($group['user_id']);
                 if (!$user) {
                     continue;
                 }
+                $display_name = esc_html($user->display_name);
                 
                 // Count actions by type
                 $action_counts = array();
@@ -167,7 +167,7 @@ class HMChat_System_Messages {
                     $label = self::get_action_label($action_type);
                     $summary_parts[] = $count . ' فایل را ' . $label;
                 }
-                $summary = $user->display_name . ' ' . $date_label . ' ' . implode(' و ', $summary_parts);
+                $summary = $display_name . ' ' . $date_label . ' ' . implode(' و ', $summary_parts);
                 
                 // Create digest data
                 $digest_data = array(
@@ -272,4 +272,8 @@ class HMChat_System_Messages {
         return false;
     }
 }
+
+// Register cron schedule filter globally
+add_filter('cron_schedules', array('HMChat_System_Messages', 'add_cron_schedule'));
+
 

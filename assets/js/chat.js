@@ -405,7 +405,7 @@
                         .addClass('hmchat-digest-header');
                     
                     $digestHeader.append($('<span>').addClass('hmchat-digest-icon').text('📊'));
-                    $digestHeader.append($('<span>').addClass('hmchat-digest-summary').html(digestData.summary || 'خلاصه فعالیت'));
+                    $digestHeader.append($('<span>').addClass('hmchat-digest-summary').text(digestData.summary || 'خلاصه فعالیت'));
                     $digestHeader.append($('<span>').addClass('hmchat-digest-toggle').text('◀'));
                     
                     const $digestDetails = $('<div>')
@@ -416,7 +416,12 @@
                         const $table = $('<table>').addClass('hmchat-digest-table');
                         digestData.actions.forEach(function(action) {
                             const $row = $('<tr>');
-                            $row.append($('<td>').html('<a href="' + (action.viewer_url || '#') + '" target="_blank">#' + action.file_name + '</a>'));
+                            const $link = $('<a>')
+                                .attr('href', action.viewer_url || '#')
+                                .attr('target', '_blank')
+                                .attr('rel', 'noopener noreferrer')
+                                .text('#' + action.file_name);
+                            $row.append($('<td>').append($link));
                             $row.append($('<td>').text(action.action_label || action.action));
                             $row.append($('<td>').text(convertToPersianNumbers(action.time)));
                             $table.append($row);
@@ -857,11 +862,17 @@
         }
         
         let j_d_m = [0, 31, 62, 93, 124, 155, 186, 216, 246, 276, 306, 336];
-        let jm;
-        for (jm = 0; jm < 12; jm++) {
-            if (j_day_no < j_d_m[jm]) {
+        let jm = 0;
+        for (let i = 0; i < 12; i++) {
+            if (j_day_no < j_d_m[i]) {
+                jm = i;
                 break;
             }
+        }
+        
+        // Ensure jm is at least 1 to avoid negative index
+        if (jm === 0) {
+            jm = 12;
         }
         
         let jd = j_day_no - j_d_m[jm - 1] + 1;
