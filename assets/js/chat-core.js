@@ -62,12 +62,12 @@
          * Cache DOM elements
          */
         cacheElements: function() {
-            this.elements.fab = $('#chat-floating-button');
-            this.elements.overlay = $('#chat-overlay');
-            this.elements.messagesContainer = $('#chat-messages-container');
-            this.elements.inputField = $('#chat-input');
-            this.elements.sendButton = $('#chat-send');
-            this.elements.closeButton = $('#chat-close');
+            this.elements.fab = $('#hamnaghsheh-chat-fab');
+            this.elements.overlay = $('#hamnaghsheh-chat-overlay');
+            this.elements.messagesContainer = $('#hamnaghsheh-chat-messages');
+            this.elements.inputField = $('#hamnaghsheh-chat-input');
+            this.elements.sendButton = $('#hamnaghsheh-chat-send');
+            this.elements.closeButton = $('#hamnaghsheh-chat-close');
             this.elements.badge = $('#chat-unread-badge');
         },
         
@@ -400,7 +400,7 @@
     
     // Auto-initialize on page load
     $(document).ready(function() {
-        const $fab = $('#chat-floating-button');
+        const $fab = $('#hamnaghsheh-chat-fab');
         if ($fab.length) {
             const projectId = $fab.data('project-id');
             if (projectId) {
