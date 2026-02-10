@@ -35,11 +35,7 @@ class HMChat_System_Messages {
      * Initialize hooks
      */
     public static function init() {
-        // Schedule cron job for digest generation every 10 minutes
-        if (!wp_next_scheduled('hmchat_generate_digests')) {
-            wp_schedule_event(time(), 'hmchat_10min', 'hmchat_generate_digests');
-        }
-        
+        // Register action hook for digest generation (scheduled during activation)
         add_action('hmchat_generate_digests', array(__CLASS__, 'generate_daily_digests'));
     }
     

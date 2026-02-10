@@ -416,12 +416,20 @@
                         const $table = $('<table>').addClass('hmchat-digest-table');
                         digestData.actions.forEach(function(action) {
                             const $row = $('<tr>');
-                            const $link = $('<a>')
-                                .attr('href', action.viewer_url || '#')
-                                .attr('target', '_blank')
-                                .attr('rel', 'noopener noreferrer')
-                                .text('#' + action.file_name);
-                            $row.append($('<td>').append($link));
+                            const $cell = $('<td>');
+                            
+                            if (action.viewer_url && action.viewer_url !== '#') {
+                                const $link = $('<a>')
+                                    .attr('href', action.viewer_url)
+                                    .attr('target', '_blank')
+                                    .attr('rel', 'noopener noreferrer')
+                                    .text('#' + action.file_name);
+                                $cell.append($link);
+                            } else {
+                                $cell.text('#' + action.file_name);
+                            }
+                            
+                            $row.append($cell);
                             $row.append($('<td>').text(action.action_label || action.action));
                             $row.append($('<td>').text(convertToPersianNumbers(action.time)));
                             $table.append($row);
