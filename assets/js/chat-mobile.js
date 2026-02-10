@@ -109,7 +109,7 @@
             // Lock body scroll
             $(document).on('touchmove', function(e) {
                 if (self.messenger.config.isOpen) {
-                    if (!$(e.target).closest('#chat-overlay').length) {
+                    if (!$(e.target).closest('#hamnaghsheh-chat-overlay').length) {
                         e.preventDefault();
                     }
                 }

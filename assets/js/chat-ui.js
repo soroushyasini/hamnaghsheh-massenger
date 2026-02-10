@@ -247,7 +247,7 @@
          * Update typing indicator
          */
         updateTypingIndicator: function(users) {
-            const $indicator = $('#typing-indicator');
+            const $indicator = $('#hamnaghsheh-typing-indicator');
             
             if (!users || users.length === 0) {
                 $indicator.removeClass('active').hide();
