@@ -112,6 +112,20 @@
             }
         });
         
+        // Toggle digest message details
+        $(document).on('click', '.hmchat-digest-header', function() {
+            const $header = $(this);
+            const $details = $header.next('.hmchat-digest-details');
+            
+            if ($details.is(':visible')) {
+                $details.slideUp(300);
+                $header.removeClass('expanded');
+            } else {
+                $details.slideDown(300);
+                $header.addClass('expanded');
+            }
+        });
+        
         // Mark messages as seen when scrolling
         $(document).on('scroll', '.hmchat-messages-wrapper', debounce(markVisibleMessagesAsSeen, 2000));
     }
@@ -274,6 +288,7 @@
     function renderMessages(messages, append = true, prepend = false) {
         const $wrapper = $('.hmchat-messages-wrapper');
         const currentUserId = hmchat_ajax.user_id;
+        let lastDateKey = null;
         
         messages.forEach(function(msg) {
             // Check if message already exists
@@ -281,7 +296,49 @@
                 return;
             }
             
+            // Check if we need to add a date divider
+            const msgDateKey = getDateKey(msg.created_at);
+            
+            if (append) {
+                // Get the last message's date
+                const $lastMessage = $('.hmchat-message').last();
+                if ($lastMessage.length > 0) {
+                    const lastMsgId = $lastMessage.data('message-id');
+                    const lastMsgTimestamp = $lastMessage.attr('data-timestamp');
+                    if (lastMsgTimestamp) {
+                        lastDateKey = getDateKey(lastMsgTimestamp);
+                    }
+                }
+                
+                // Add date divider if date changed
+                if (lastDateKey !== msgDateKey) {
+                    const dateLabel = getJalaliDateLabel(msg.created_at);
+                    const $divider = $('<div>')
+                        .addClass('hmchat-date-divider')
+                        .html('<span>' + dateLabel + '</span>');
+                    $wrapper.append($divider);
+                }
+            } else if (prepend) {
+                // For prepending, check the first existing message
+                const $firstMessage = $('.hmchat-message').first();
+                if ($firstMessage.length > 0) {
+                    const firstMsgTimestamp = $firstMessage.attr('data-timestamp');
+                    if (firstMsgTimestamp) {
+                        const firstDateKey = getDateKey(firstMsgTimestamp);
+                        if (msgDateKey !== firstDateKey) {
+                            const dateLabel = getJalaliDateLabel(firstMsgTimestamp);
+                            const $divider = $('<div>')
+                                .addClass('hmchat-date-divider')
+                                .html('<span>' + dateLabel + '</span>');
+                            $firstMessage.before($divider);
+                        }
+                    }
+                }
+            }
+            
             const $message = createMessageElement(msg, currentUserId);
+            // Add timestamp attribute for date grouping
+            $message.attr('data-timestamp', msg.created_at);
             
             if (prepend) {
                 // Insert after load more button if it exists
@@ -296,6 +353,8 @@
             } else {
                 $wrapper.append($message);
             }
+            
+            lastDateKey = msgDateKey;
         });
     }
     
@@ -329,9 +388,68 @@
         }
         
         if (isSystem) {
+            // Check if it's a digest message (JSON format)
+            const isDigest = msg.message_type === 'system_digest';
+            
+            if (isDigest) {
+                messageClass += ' system-digest';
+            }
+            
             const $bubble = $('<div>').addClass('hmchat-message-bubble');
-            const $text = $('<p>').addClass('hmchat-message-text').html('📄 ' + msg.message);
-            $bubble.append($text);
+            
+            if (isDigest) {
+                // Render digest message
+                try {
+                    const digestData = JSON.parse(msg.message);
+                    const $digestHeader = $('<div>')
+                        .addClass('hmchat-digest-header');
+                    
+                    $digestHeader.append($('<span>').addClass('hmchat-digest-icon').text('📊'));
+                    $digestHeader.append($('<span>').addClass('hmchat-digest-summary').text(digestData.summary || 'خلاصه فعالیت'));
+                    $digestHeader.append($('<span>').addClass('hmchat-digest-toggle').text('◀'));
+                    
+                    const $digestDetails = $('<div>')
+                        .addClass('hmchat-digest-details')
+                        .css('display', 'none');
+                    
+                    if (digestData.actions && digestData.actions.length > 0) {
+                        const $table = $('<table>').addClass('hmchat-digest-table');
+                        digestData.actions.forEach(function(action) {
+                            const $row = $('<tr>');
+                            const $cell = $('<td>');
+                            
+                            if (action.viewer_url && action.viewer_url !== '#') {
+                                const $link = $('<a>')
+                                    .attr('href', action.viewer_url)
+                                    .attr('target', '_blank')
+                                    .attr('rel', 'noopener noreferrer')
+                                    .text('#' + action.file_name);
+                                $cell.append($link);
+                            } else {
+                                $cell.text('#' + action.file_name);
+                            }
+                            
+                            $row.append($cell);
+                            $row.append($('<td>').text(action.action_label || action.action));
+                            $row.append($('<td>').text(convertToPersianNumbers(action.time)));
+                            $table.append($row);
+                        });
+                        $digestDetails.append($table);
+                    }
+                    
+                    $bubble.append($digestHeader);
+                    $bubble.append($digestDetails);
+                } catch (e) {
+                    // Fallback if JSON parsing fails
+                    const $text = $('<p>').addClass('hmchat-message-text').html('📄 ' + msg.message);
+                    $bubble.append($text);
+                }
+            } else {
+                // Regular system message
+                const $text = $('<p>').addClass('hmchat-message-text').html('📄 ' + msg.message);
+                $bubble.append($text);
+            }
+            
             $message.append($bubble);
         } else {
             // Avatar
@@ -703,6 +821,109 @@
         return String(str).replace(/\d/g, function(digit) {
             return persianNumbers[digit];
         });
+    }
+    
+    /**
+     * Convert Gregorian date to Jalali (Persian/Solar Hijri calendar)
+     * 
+     * This algorithm converts Gregorian calendar dates to the Iranian/Persian calendar (Jalali).
+     * The Jalali calendar is a solar calendar used in Iran and Afghanistan.
+     * 
+     * Algorithm source: Based on the formula by Kazimierz M. Borkowski
+     * Reference: https://www.astro.uni.torun.pl/~kb/Papers/EMP/PersianC-EMP.htm
+     * 
+     * Accuracy: Valid for dates between 1800-2200 CE (approximately 1178-1578 Persian calendar)
+     * 
+     * @param Date date JavaScript Date object to convert
+     * @return Array [year, month, day] in Jalali calendar
+     */
+    function gregorianToJalali(date) {
+        const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        let gy = date.getFullYear();
+        let gm = date.getMonth() + 1;
+        let gd = date.getDate();
+        
+        let g_day_no = 365 * gy + Math.floor((gy + 3) / 4) - Math.floor((gy + 99) / 100) + Math.floor((gy + 399) / 400);
+        
+        for (let i = 0; i < gm - 1; i++) {
+            g_day_no += g_d_m[i];
+        }
+        
+        if (gm > 2 && ((gy % 4 === 0 && gy % 100 !== 0) || (gy % 400 === 0))) {
+            g_day_no++;
+        }
+        
+        g_day_no += gd;
+        
+        let j_day_no = g_day_no - 79;
+        
+        let j_np = Math.floor(j_day_no / 12053);
+        j_day_no = j_day_no % 12053;
+        
+        let jy = 979 + 33 * j_np + 4 * Math.floor(j_day_no / 1461);
+        
+        j_day_no %= 1461;
+        
+        if (j_day_no >= 366) {
+            jy += Math.floor((j_day_no - 1) / 365);
+            j_day_no = (j_day_no - 1) % 365;
+        }
+        
+        let j_d_m = [0, 31, 62, 93, 124, 155, 186, 216, 246, 276, 306, 336];
+        let jm = 0;
+        for (let i = 0; i < 12; i++) {
+            if (j_day_no < j_d_m[i]) {
+                jm = i;
+                break;
+            }
+        }
+        
+        // Ensure jm is at least 1 to avoid negative index
+        if (jm === 0) {
+            jm = 12;
+        }
+        
+        let jd = j_day_no - j_d_m[jm - 1] + 1;
+        
+        return [jy, jm, jd];
+    }
+    
+    /**
+     * Get Jalali date label for message grouping
+     */
+    function getJalaliDateLabel(timestamp) {
+        const now = new Date();
+        const msgDate = new Date(timestamp);
+        
+        // Reset time to midnight for comparison
+        const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const msgMidnight = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate());
+        
+        const diffTime = nowMidnight - msgMidnight;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+            return 'امروز';
+        } else if (diffDays === 1) {
+            return 'دیروز';
+        } else {
+            const jalali = gregorianToJalali(msgDate);
+            const year = jalali[0];
+            const month = String(jalali[1]).padStart(2, '0');
+            const day = String(jalali[2]).padStart(2, '0');
+            return convertToPersianNumbers(year + '/' + month + '/' + day);
+        }
+    }
+    
+    /**
+     * Get date key for grouping (YYYY-MM-DD format)
+     */
+    function getDateKey(timestamp) {
+        const date = new Date(timestamp);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return year + '-' + month + '-' + day;
     }
     
     /**

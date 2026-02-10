@@ -34,6 +34,42 @@ class HMChat_Mentions {
     }
     
     /**
+     * Get viewer URL for a file based on its extension
+     * Shared utility method used by mentions and system messages
+     * 
+     * @param string $file_name File name with extension
+     * @param string $file_path File path for URL encoding
+     * @return string Viewer URL
+     */
+    public static function get_file_viewer_url($file_name, $file_path) {
+        $extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+        
+        switch ($extension) {
+            case 'dwg':
+            case 'dxf':
+                return 'https://hamnaghsheh.ir/dwg-viewer/?file=' . urlencode($file_path);
+            
+            case 'kml':
+            case 'kmz':
+            case 'geojson':
+                return 'https://hamnaghsheh.ir/gis-viewer/?file=' . urlencode($file_path) . '&type=' . $extension;
+            
+            case 'pdf':
+            case 'jpg':
+            case 'jpeg':
+            case 'png':
+            case 'gif':
+                return 'https://hamnaghsheh.ir/document-viewer/?file=' . urlencode($file_path) . '&type=' . $extension;
+            
+            case 'txt':
+                return 'https://hamnaghsheh.ir/txt-viewer/?file=' . urlencode($file_path);
+            
+            default:
+                return 'https://hamnaghsheh.ir/document-viewer/?file=' . urlencode($file_path) . '&type=' . $extension;
+        }
+    }
+    
+    /**
      * Render mentions from storage format to HTML
      * 
      * @param string $message Message with mentions in storage format
@@ -52,23 +88,32 @@ class HMChat_Mentions {
             $message
         );
         
-        // Convert #[file_id:file_name] to HTML link
+        // Convert #[file_id:file_name] to HTML link with direct viewer URL
         $message = preg_replace_callback(
             '/#\[(\d+):([^\]]+)\]/',
             function($matches) use ($project_id) {
                 $file_id = $matches[1];
                 $file_name = esc_html($matches[2]);
                 
-                // Create link to file (assuming main plugin has this structure)
-                $file_url = add_query_arg(
-                    array(
-                        'id' => $project_id,
-                        'file' => $file_id
-                    ),
-                    home_url('/show-project')
-                );
+                // Get file details from database
+                global $wpdb;
+                $table_prefix = $wpdb->prefix . HMCHAT_PREFIX;
+                $files_table = $table_prefix . 'files';
                 
-                return '<a class="hmchat-mention hmchat-mention-file" href="' . esc_url($file_url) . '#file-' . esc_attr($file_id) . '" data-file-id="' . esc_attr($file_id) . '">#' . $file_name . '</a>';
+                $file = $wpdb->get_row($wpdb->prepare(
+                    "SELECT file_path FROM {$files_table} WHERE id = %d",
+                    $file_id
+                ));
+                
+                if (!$file || !$file->file_path) {
+                    // Fallback to simple anchor link if file not found
+                    return '<span class="hmchat-mention hmchat-mention-file" data-file-id="' . esc_attr($file_id) . '">#' . $file_name . '</span>';
+                }
+                
+                // Generate viewer URL using shared method
+                $file_url = self::get_file_viewer_url($file_name, $file->file_path);
+                
+                return '<a class="hmchat-mention hmchat-mention-file" href="' . esc_url($file_url) . '" target="_blank" rel="noopener noreferrer" data-file-id="' . esc_attr($file_id) . '">#' . $file_name . '</a>';
             },
             $message
         );

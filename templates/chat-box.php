@@ -36,7 +36,7 @@ $is_owner = $is_owner ?? false;
     </div>
     
     <!-- Tabs -->
-    <div class="hmchat-tabs hmchat-hidden">
+    <div class="hmchat-tabs">
         <button class="hmchat-tab" data-tab="files">
             📁 فایلها
         </button>
