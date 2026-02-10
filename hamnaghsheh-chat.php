@@ -179,6 +179,7 @@ function hmchat_enqueue_scripts() {
         'ajax_url' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('hmchat_nonce'),
         'user_id' => get_current_user_id(),
+        'max_message_length' => 2000,
         'strings' => array(
             'sending' => 'در حال ارسال...',
             'error' => 'خطا در ارسال پیام',

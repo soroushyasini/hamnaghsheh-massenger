@@ -144,8 +144,8 @@
             return;
         }
         
-        if (message.length > 2000) {
-            showError('پیام نمی‌تواند بیشتر از ۲۰۰۰ کاراکتر باشد');
+        if (message.length > hmchat_ajax.max_message_length) {
+            showError('پیام نمی‌تواند بیشتر از ' + hmchat_ajax.max_message_length + ' کاراکتر باشد');
             return;
         }
         
@@ -319,6 +319,11 @@
             .addClass(messageClass)
             .attr('data-message-id', msg.id);
         
+        // Store raw message for editing (without HTML rendering)
+        if (!isSystem && msg.message) {
+            $message.attr('data-message-raw', msg.message.replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'));
+        }
+        
         if (isSystem) {
             const $bubble = $('<div>').addClass('hmchat-message-bubble');
             const $text = $('<p>').addClass('hmchat-message-text').html('📄 ' + msg.message);
@@ -388,7 +393,12 @@
      */
     function startEditMessage(messageId) {
         const $message = $('.hmchat-message[data-message-id="' + messageId + '"]');
-        const currentText = $message.find('.hmchat-message-text').text().trim();
+        
+        // Get original message text from data attribute (if available) or from text content
+        let currentText = $message.data('message-raw');
+        if (!currentText) {
+            currentText = $message.find('.hmchat-message-text').text().trim();
+        }
         
         const $editBox = $('<div>').addClass('hmchat-message-edit');
         const $input = $('<textarea>')

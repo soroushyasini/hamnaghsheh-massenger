@@ -33,7 +33,7 @@ class HMChat_Renderer {
         }
         
         // Check if user is logged in
-        if (!is_logged_in()) {
+        if (!is_user_logged_in()) {
             return;
         }
         
@@ -64,7 +64,10 @@ class HMChat_Renderer {
         ));
         
         // Include chat template
-        include HMCHAT_DIR . 'templates/chat-box.php';
+        $template_file = HMCHAT_DIR . 'templates/chat-box.php';
+        if (file_exists($template_file)) {
+            include $template_file;
+        }
     }
     
     /**

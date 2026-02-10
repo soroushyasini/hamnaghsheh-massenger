@@ -160,12 +160,13 @@ class HMChat_Export {
     }
     
     /**
-     * Get current Jalali date
+     * Get current date (Gregorian format for filename)
      * 
-     * @return string Jalali date
+     * @return string Date in Y-m-d format
      */
     private static function get_jalali_date() {
-        // Simple implementation - in production use proper Jalali library
+        // Returns Gregorian date for filename compatibility
+        // TODO: Implement proper Jalali conversion for display
         $timestamp = current_time('timestamp');
         $date = date('Y-m-d', $timestamp);
         

@@ -10,8 +10,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$project_id = isset($project_id) ? $project_id : 0;
-$is_owner = isset($is_owner) ? $is_owner : false;
+// Ensure variables are set with defaults
+$project_id = $project_id ?? 0;
+$is_owner = $is_owner ?? false;
 ?>
 
 <div class="hmchat-container minimized" id="hmchat-container">

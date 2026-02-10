@@ -221,8 +221,12 @@ class HMChat_Messages {
             array('%d')
         );
         
+        // Check for actual database error (false) vs no rows updated (0)
         if ($updated === false) {
             wp_send_json_error(array('message' => 'خطا در ویرایش پیام'));
+        } elseif ($updated === 0) {
+            // No rows updated - message content was identical
+            // This is acceptable, continue to return success
         }
         
         // Get updated message data
