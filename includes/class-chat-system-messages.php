@@ -22,6 +22,9 @@ class HMChat_System_Messages {
      * Initialize hooks
      */
     public static function init() {
+        // Register custom cron schedule first
+        add_filter('cron_schedules', array(__CLASS__, 'add_cron_schedule'));
+        
         // Schedule cron job for digest generation every 10 minutes
         if (!wp_next_scheduled('hmchat_generate_digests')) {
             wp_schedule_event(time(), 'hmchat_10min', 'hmchat_generate_digests');
@@ -100,8 +103,8 @@ class HMChat_System_Messages {
                 ));
                 
                 if ($file) {
-                    // Generate viewer URL
-                    $viewer_url = self::get_viewer_url($file->file_name, $file->file_path);
+                    // Generate viewer URL using shared method
+                    $viewer_url = HMChat_Mentions::get_file_viewer_url($file->file_name, $file->file_path);
                     
                     // Format action label in Persian
                     $action_label = self::get_action_label($log->action_type);
@@ -144,13 +147,27 @@ class HMChat_System_Messages {
                     $action_counts[$action['action']]++;
                 }
                 
+                // Generate date label
+                $today = date('Y-m-d');
+                $yesterday = date('Y-m-d', strtotime('-1 day'));
+                $date_label = 'امروز';
+                
+                if ($group['date'] === $today) {
+                    $date_label = 'امروز';
+                } elseif ($group['date'] === $yesterday) {
+                    $date_label = 'دیروز';
+                } else {
+                    // Use the actual date
+                    $date_label = 'در تاریخ ' . $group['date'];
+                }
+                
                 // Generate summary text
                 $summary_parts = array();
                 foreach ($action_counts as $action_type => $count) {
                     $label = self::get_action_label($action_type);
                     $summary_parts[] = $count . ' فایل را ' . $label;
                 }
-                $summary = $user->display_name . ' امروز ' . implode(' و ', $summary_parts);
+                $summary = $user->display_name . ' ' . $date_label . ' ' . implode(' و ', $summary_parts);
                 
                 // Create digest data
                 $digest_data = array(
@@ -176,37 +193,6 @@ class HMChat_System_Messages {
             
             // Update last processed ID
             update_option($option_key, $last_processed_id);
-        }
-    }
-    
-    /**
-     * Get viewer URL for a file based on its extension
-     */
-    private static function get_viewer_url($file_name, $file_path) {
-        $extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-        
-        switch ($extension) {
-            case 'dwg':
-            case 'dxf':
-                return 'https://hamnaghsheh.ir/dwg-viewer/?file=' . urlencode($file_path);
-            
-            case 'kml':
-            case 'kmz':
-            case 'geojson':
-                return 'https://hamnaghsheh.ir/gis-viewer/?file=' . urlencode($file_path) . '&type=' . $extension;
-            
-            case 'pdf':
-            case 'jpg':
-            case 'jpeg':
-            case 'png':
-            case 'gif':
-                return 'https://hamnaghsheh.ir/document-viewer/?file=' . urlencode($file_path) . '&type=' . $extension;
-            
-            case 'txt':
-                return 'https://hamnaghsheh.ir/txt-viewer/?file=' . urlencode($file_path);
-            
-            default:
-                return 'https://hamnaghsheh.ir/document-viewer/?file=' . urlencode($file_path) . '&type=' . $extension;
         }
     }
     
@@ -286,7 +272,4 @@ class HMChat_System_Messages {
         return false;
     }
 }
-
-// Add cron schedule filter
-add_filter('cron_schedules', array('HMChat_System_Messages', 'add_cron_schedule'));
 

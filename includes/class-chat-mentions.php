@@ -34,6 +34,42 @@ class HMChat_Mentions {
     }
     
     /**
+     * Get viewer URL for a file based on its extension
+     * Shared utility method used by mentions and system messages
+     * 
+     * @param string $file_name File name with extension
+     * @param string $file_path File path for URL encoding
+     * @return string Viewer URL
+     */
+    public static function get_file_viewer_url($file_name, $file_path) {
+        $extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+        
+        switch ($extension) {
+            case 'dwg':
+            case 'dxf':
+                return 'https://hamnaghsheh.ir/dwg-viewer/?file=' . urlencode($file_path);
+            
+            case 'kml':
+            case 'kmz':
+            case 'geojson':
+                return 'https://hamnaghsheh.ir/gis-viewer/?file=' . urlencode($file_path) . '&type=' . $extension;
+            
+            case 'pdf':
+            case 'jpg':
+            case 'jpeg':
+            case 'png':
+            case 'gif':
+                return 'https://hamnaghsheh.ir/document-viewer/?file=' . urlencode($file_path) . '&type=' . $extension;
+            
+            case 'txt':
+                return 'https://hamnaghsheh.ir/txt-viewer/?file=' . urlencode($file_path);
+            
+            default:
+                return 'https://hamnaghsheh.ir/document-viewer/?file=' . urlencode($file_path) . '&type=' . $extension;
+        }
+    }
+    
+    /**
      * Render mentions from storage format to HTML
      * 
      * @param string $message Message with mentions in storage format
@@ -74,40 +110,8 @@ class HMChat_Mentions {
                     return '<span class="hmchat-mention hmchat-mention-file" data-file-id="' . esc_attr($file_id) . '">#' . $file_name . '</span>';
                 }
                 
-                // Get file extension
-                $extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-                $file_url = '';
-                
-                // Generate viewer URL based on extension
-                switch ($extension) {
-                    case 'dwg':
-                    case 'dxf':
-                        $file_url = 'https://hamnaghsheh.ir/dwg-viewer/?file=' . urlencode($file->file_path);
-                        break;
-                    
-                    case 'kml':
-                    case 'kmz':
-                    case 'geojson':
-                        $file_url = 'https://hamnaghsheh.ir/gis-viewer/?file=' . urlencode($file->file_path) . '&type=' . $extension;
-                        break;
-                    
-                    case 'pdf':
-                    case 'jpg':
-                    case 'jpeg':
-                    case 'png':
-                    case 'gif':
-                        $file_url = 'https://hamnaghsheh.ir/document-viewer/?file=' . urlencode($file->file_path) . '&type=' . $extension;
-                        break;
-                    
-                    case 'txt':
-                        $file_url = 'https://hamnaghsheh.ir/txt-viewer/?file=' . urlencode($file->file_path);
-                        break;
-                    
-                    default:
-                        // For unsupported file types, use generic viewer or download
-                        $file_url = 'https://hamnaghsheh.ir/document-viewer/?file=' . urlencode($file->file_path) . '&type=' . $extension;
-                        break;
-                }
+                // Generate viewer URL using shared method
+                $file_url = self::get_file_viewer_url($file_name, $file->file_path);
                 
                 return '<a class="hmchat-mention hmchat-mention-file" href="' . esc_url($file_url) . '" target="_blank" rel="noopener noreferrer" data-file-id="' . esc_attr($file_id) . '">#' . $file_name . '</a>';
             },

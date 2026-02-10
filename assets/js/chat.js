@@ -112,6 +112,20 @@
             }
         });
         
+        // Toggle digest message details
+        $(document).on('click', '.hmchat-digest-header', function() {
+            const $header = $(this);
+            const $details = $header.next('.hmchat-digest-details');
+            
+            if ($details.is(':visible')) {
+                $details.slideUp(300);
+                $header.removeClass('expanded');
+            } else {
+                $details.slideDown(300);
+                $header.addClass('expanded');
+            }
+        });
+        
         // Mark messages as seen when scrolling
         $(document).on('scroll', '.hmchat-messages-wrapper', debounce(markVisibleMessagesAsSeen, 2000));
     }
@@ -388,8 +402,7 @@
                 try {
                     const digestData = JSON.parse(msg.message);
                     const $digestHeader = $('<div>')
-                        .addClass('hmchat-digest-header')
-                        .attr('onclick', 'toggleDigest(this)');
+                        .addClass('hmchat-digest-header');
                     
                     $digestHeader.append($('<span>').addClass('hmchat-digest-icon').text('📊'));
                     $digestHeader.append($('<span>').addClass('hmchat-digest-summary').html(digestData.summary || 'خلاصه فعالیت'));
@@ -798,8 +811,18 @@
     }
     
     /**
-     * Convert Gregorian date to Jalali
-     * Simple conversion algorithm for Persian calendar
+     * Convert Gregorian date to Jalali (Persian/Solar Hijri calendar)
+     * 
+     * This algorithm converts Gregorian calendar dates to the Iranian/Persian calendar (Jalali).
+     * The Jalali calendar is a solar calendar used in Iran and Afghanistan.
+     * 
+     * Algorithm source: Based on the formula by Kazimierz M. Borkowski
+     * Reference: https://www.astro.uni.torun.pl/~kb/Papers/EMP/PersianC-EMP.htm
+     * 
+     * Accuracy: Valid for dates between 1800-2200 CE (approximately 1178-1578 Persian calendar)
+     * 
+     * @param Date date JavaScript Date object to convert
+     * @return Array [year, month, day] in Jalali calendar
      */
     function gregorianToJalali(date) {
         const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
@@ -911,20 +934,6 @@
     $(document).ready(function() {
         initChat();
     });
-    
-    // Global toggle function for digest messages
-    window.toggleDigest = function(element) {
-        const $header = $(element);
-        const $details = $header.next('.hmchat-digest-details');
-        
-        if ($details.is(':visible')) {
-            $details.slideUp(300);
-            $header.removeClass('expanded');
-        } else {
-            $details.slideDown(300);
-            $header.addClass('expanded');
-        }
-    };
     
     // Expose to global scope for debugging
     window.HMChat = {
