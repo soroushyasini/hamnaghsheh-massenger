@@ -682,3 +682,120 @@
         transform: translateY(-6px);
     }
 }
+
+/* Date Divider */
+.hmchat-date-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 20px 0 10px;
+    color: #767676;
+    font-size: 12px;
+}
+
+.hmchat-date-divider::before,
+.hmchat-date-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e0e0e0;
+    margin: 0 10px;
+}
+
+/* Digest Message Styles */
+.hmchat-message.system-digest .hmchat-message-bubble {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.hmchat-digest-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.hmchat-digest-header:hover {
+    background: #e9ecef;
+}
+
+.hmchat-digest-icon {
+    font-size: 16px;
+}
+
+.hmchat-digest-summary {
+    flex: 1;
+}
+
+.hmchat-digest-toggle {
+    margin-right: auto;
+    transition: transform 0.3s;
+    font-size: 12px;
+}
+
+.hmchat-digest-header.expanded .hmchat-digest-toggle {
+    transform: rotate(90deg);
+}
+
+.hmchat-digest-details {
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.hmchat-digest-table {
+    width: 100%;
+    margin-top: 10px;
+    font-size: 12px;
+    border-collapse: collapse;
+}
+
+.hmchat-digest-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.hmchat-digest-table td:first-child {
+    text-align: right;
+}
+
+.hmchat-digest-table td:last-child {
+    text-align: left;
+    color: #999;
+}
+
+.hmchat-digest-table a {
+    color: #09375B;
+    text-decoration: none;
+}
+
+.hmchat-digest-table a:hover {
+    text-decoration: underline;
+}
+
+/* Mobile adjustments for digest and date dividers */
+@media (max-width: 640px) {
+    .hmchat-digest-table {
+        font-size: 11px;
+    }
+    
+    .hmchat-digest-table td {
+        padding: 4px 6px;
+    }
+    
+    .hmchat-date-divider {
+        font-size: 11px;
+        margin: 15px 0 8px;
+    }
+    
+    .hmchat-mention-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    .hmchat-autocomplete {
+        max-width: 100%;
+    }
+}
