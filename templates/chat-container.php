@@ -39,8 +39,8 @@ error_log("✅ Chat template rendering for project $project_id, user {$current_u
         <!-- Chat Header -->
         <div class="chat-header">
             <div class="chat-header-content">
-                <h3 class="chat-title">💬 گفتگوی پروژه</h3>
-                <p class="chat-subtitle" id="chat-online-users">در حال بارگذاری...</p>
+                <h3 class="chat-title">💬 <?php esc_html_e('Project Chat', 'hamnaghsheh-messenger'); ?></h3>
+                <p class="chat-subtitle" id="chat-online-users"><?php esc_html_e('Loading...', 'hamnaghsheh-messenger'); ?></p>
             </div>
             <button type="button" class="chat-close" id="hamnaghsheh-chat-close" aria-label="Close chat">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -56,14 +56,14 @@ error_log("✅ Chat template rendering for project $project_id, user {$current_u
                 <!-- Load more button -->
                 <div class="load-more-container" style="text-align: center; padding: 10px; display: none;">
                     <button type="button" class="load-more-btn" id="chat-load-more">
-                        بارگذاری پیامهای قبلی
+                        <?php esc_html_e('Load previous messages', 'hamnaghsheh-messenger'); ?>
                     </button>
                 </div>
                 
                 <!-- Messages will be dynamically inserted here -->
                 <div class="chat-loading" id="chat-initial-loading">
                     <div class="loading-spinner"></div>
-                    <p>در حال بارگذاری پیامها...</p>
+                    <p><?php esc_html_e('Loading messages...', 'hamnaghsheh-messenger'); ?></p>
                 </div>
             </div>
         </div>
@@ -85,7 +85,7 @@ error_log("✅ Chat template rendering for project $project_id, user {$current_u
                 <textarea 
                     id="hamnaghsheh-chat-input" 
                     class="chat-input" 
-                    placeholder="پیام خود را بنویسید..."
+                    placeholder="<?php esc_attr_e('Write your message...', 'hamnaghsheh-messenger'); ?>"
                     rows="1"
                     maxlength="2000"
                     data-project-id="<?php echo esc_attr($project_id); ?>"
@@ -117,19 +117,19 @@ error_log("✅ Chat template rendering for project $project_id, user {$current_u
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
         </svg>
-        ویرایش
+        <?php esc_html_e('Edit', 'hamnaghsheh-messenger'); ?>
     </button>
     <button type="button" class="context-menu-item" data-action="delete">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"></polyline>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
         </svg>
-        حذف
+        <?php esc_html_e('Delete', 'hamnaghsheh-messenger'); ?>
     </button>
 </div>
 
 <script>
-console.log('✅ Chat template loaded for project <?php echo $project_id; ?>');
+console.log('✅ Chat template loaded for project <?php echo esc_js($project_id); ?>');
 console.log('✅ Chat overlay element:', document.getElementById('hamnaghsheh-chat-overlay') ? 'EXISTS' : 'MISSING');
 console.log('✅ Chat FAB element:', document.getElementById('hamnaghsheh-chat-fab') ? 'EXISTS' : 'MISSING');
 </script>
