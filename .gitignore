@@ -1,0 +1,51 @@
+# WordPress
+wp-config.php
+wp-content/uploads/
+wp-content/backup*/
+wp-content/upgrade/
+wp-content/advanced-cache.php
+wp-content/wp-cache-config.php
+
+# Plugin Development
+.DS_Store
+.idea/
+.vscode/
+*.log
+*.swp
+*.swo
+*~
+.phpunit.result.cache
+
+# Dependencies
+node_modules/
+vendor/
+composer.lock
+package-lock.json
+
+# Build artifacts
+dist/
+build/
+*.min.js
+*.min.css
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+Thumbs.db
+.directory
+
+# IDE
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+nbproject/
+
+# Testing
+phpunit.xml
+.phpunit.result.cache
+tests/_output/
+codeception.yml
