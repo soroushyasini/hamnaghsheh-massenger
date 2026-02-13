@@ -34,6 +34,7 @@ class HMChat_Messages {
         add_action('wp_ajax_hmchat_edit_message', array(__CLASS__, 'ajax_edit_message'));
         add_action('wp_ajax_hmchat_get_members', array(__CLASS__, 'ajax_get_members'));
         add_action('wp_ajax_hmchat_get_files', array(__CLASS__, 'ajax_get_files'));
+        add_action('wp_ajax_hmchat_get_project_files', array(__CLASS__, 'ajax_get_project_files'));
     }
     
     /**
@@ -116,6 +117,7 @@ class HMChat_Messages {
         
         $project_id = isset($_POST['project_id']) ? intval($_POST['project_id']) : 0;
         $last_message_id = isset($_POST['last_message_id']) ? intval($_POST['last_message_id']) : 0;
+        $last_log_id = isset($_POST['last_log_id']) ? intval($_POST['last_log_id']) : 0;
         $user_id = get_current_user_id();
         
         if (!$project_id || !$user_id) {
@@ -127,15 +129,77 @@ class HMChat_Messages {
             wp_send_json_error(array('message' => 'دسترسی غیرمجاز'));
         }
         
-        // Get new messages
-        $messages = self::get_messages_after($project_id, $last_message_id, 50);
+        global $wpdb;
+        $table_prefix = $wpdb->prefix . HMCHAT_PREFIX;
         
-        // Process system messages from file logs
-        HMChat_System_Messages::process_file_logs($project_id);
+        // Fetch user messages
+        $user_messages = $wpdb->get_results($wpdb->prepare("
+            SELECT 
+                m.id,
+                m.user_id,
+                m.message,
+                m.created_at,
+                m.is_edited,
+                m.edited_at,
+                m.message_type,
+                u.display_name,
+                'user' as msg_type
+            FROM {$table_prefix}chat_messages m
+            LEFT JOIN {$wpdb->users} u ON m.user_id = u.ID
+            WHERE m.project_id = %d
+                AND m.id > %d
+                AND m.message_type IN ('text', 'system', 'system_digest')
+            ORDER BY m.id ASC
+            LIMIT 50
+        ", $project_id, $last_message_id));
+        
+        // Fetch file logs as system messages
+        $file_logs = $wpdb->get_results($wpdb->prepare("
+            SELECT 
+                fl.id as log_id,
+                fl.user_id,
+                fl.action_type,
+                fl.file_id,
+                f.file_name,
+                f.file_path,
+                fl.created_at,
+                u.display_name,
+                'system' as msg_type
+            FROM {$table_prefix}file_logs fl
+            LEFT JOIN {$table_prefix}files f ON fl.file_id = f.id
+            LEFT JOIN {$wpdb->users} u ON fl.user_id = u.ID
+            WHERE fl.project_id = %d
+                AND fl.id > %d
+            ORDER BY fl.id ASC
+            LIMIT 50
+        ", $project_id, $last_log_id));
+        
+        // Format file logs as system messages
+        $formatted_file_logs = array();
+        foreach ($file_logs as $log) {
+            $formatted_file_logs[] = array(
+                'id' => 'log_' . $log->log_id,
+                'log_id' => $log->log_id,
+                'user_id' => $log->user_id,
+                'message' => self::format_file_log_message($log),
+                'message_type' => 'system',
+                'created_at' => $log->created_at,
+                'msg_type' => 'system'
+            );
+        }
+        
+        // Format user messages
+        $formatted_user_messages = self::format_messages($user_messages);
+        
+        // Merge and sort chronologically
+        $all_messages = array_merge($formatted_user_messages, $formatted_file_logs);
+        usort($all_messages, function($a, $b) {
+            return strtotime($a['created_at']) <=> strtotime($b['created_at']);
+        });
         
         wp_send_json_success(array(
-            'messages' => $messages,
-            'count' => count($messages)
+            'messages' => $all_messages,
+            'count' => count($all_messages)
         ));
     }
     
@@ -454,5 +518,62 @@ class HMChat_Messages {
         $messages = array_reverse($messages);
         
         return self::format_messages($messages);
+    }
+    
+    /**
+     * Format file log message
+     */
+    private static function format_file_log_message($log) {
+        $actions = array(
+            'upload' => 'آپلود کرد',
+            'delete' => 'حذف کرد',
+            'replace' => 'جایگزین کرد',
+            'download' => 'دانلود کرد',
+            'see' => 'مشاهده کرد'
+        );
+        
+        $action_text = isset($actions[$log->action_type]) ? $actions[$log->action_type] : 'عملیات کرد';
+        
+        // Create file mention
+        if ($log->file_id && $log->file_name) {
+            $file_mention = "#[{$log->file_id}:{$log->file_name}]";
+        } else {
+            $file_mention = 'فایل';
+        }
+        
+        return "📄 {$log->display_name} فایل {$file_mention} را {$action_text}";
+    }
+    
+    /**
+     * AJAX: Get project files for files tab
+     */
+    public static function ajax_get_project_files() {
+        check_ajax_referer('hmchat_nonce', 'nonce');
+        
+        $project_id = isset($_POST['project_id']) ? intval($_POST['project_id']) : 0;
+        $user_id = get_current_user_id();
+        
+        if (!$project_id || !$user_id) {
+            wp_send_json_error(array('message' => 'پارامترهای نامعتبر'));
+        }
+        
+        // Check access
+        if (!HMChat_Access::can_access_chat($project_id, $user_id)) {
+            wp_send_json_error(array('message' => 'دسترسی غیرمجاز'));
+        }
+        
+        global $wpdb;
+        $table_prefix = $wpdb->prefix . HMCHAT_PREFIX;
+        $files_table = $table_prefix . 'files';
+        
+        $files = $wpdb->get_results($wpdb->prepare(
+            "SELECT id, file_name, file_path, file_size, uploaded_at
+             FROM {$files_table}
+             WHERE project_id = %d
+             ORDER BY uploaded_at DESC",
+            $project_id
+        ), ARRAY_A);
+        
+        wp_send_json_success(array('files' => $files ? $files : array()));
     }
 }

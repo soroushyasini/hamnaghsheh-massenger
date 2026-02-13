@@ -35,8 +35,8 @@ class HMChat_System_Messages {
      * Initialize hooks
      */
     public static function init() {
-        // Register action hook for digest generation (scheduled during activation)
-        add_action('hmchat_generate_digests', array(__CLASS__, 'generate_daily_digests'));
+        // Cron-based digest generation disabled - now using real-time file log display via JOIN
+        // add_action('hmchat_generate_digests', array(__CLASS__, 'generate_daily_digests'));
     }
     
     /**

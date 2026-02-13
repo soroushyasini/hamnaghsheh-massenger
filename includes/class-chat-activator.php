@@ -28,7 +28,7 @@ class HMChat_Activator {
             project_id bigint(20) unsigned NOT NULL,
             user_id bigint(20) unsigned NOT NULL,
             message text NOT NULL,
-            message_type enum('text','system') DEFAULT 'text',
+            message_type enum('text','system','system_digest') DEFAULT 'text',
             is_edited tinyint(1) DEFAULT 0,
             edited_at datetime DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
@@ -60,9 +60,10 @@ class HMChat_Activator {
         // Create options for tracking last processed file log
         add_option('hmchat_last_processed_file_log', 0);
         
+        // Note: Daily digest cron job disabled - using real-time file log display via JOIN
         // Schedule digest generation cron job
-        if (!wp_next_scheduled('hmchat_generate_digests')) {
-            wp_schedule_event(time(), 'hmchat_10min', 'hmchat_generate_digests');
-        }
+        // if (!wp_next_scheduled('hmchat_generate_digests')) {
+        //     wp_schedule_event(time(), 'hmchat_10min', 'hmchat_generate_digests');
+        // }
     }
 }
