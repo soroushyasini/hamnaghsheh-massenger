@@ -17,6 +17,7 @@
     let chatState = {
         projectId: null,
         lastMessageId: 0,
+        lastLogId: 0,
         isMinimized: true,
         pollInterval: null,
         currentPollDelay: POLL_INTERVALS.active,
@@ -41,6 +42,10 @@
         
         chatState.projectId = hmchat_project.project_id;
         chatState.members = hmchat_project.members || [];
+        
+        // Load lastLogId from localStorage
+        const storageKey = 'hmchat_last_log_' + chatState.projectId;
+        chatState.lastLogId = parseInt(localStorage.getItem(storageKey)) || 0;
         
         // Load initial messages
         if (hmchat_project.initial_messages && hmchat_project.initial_messages.length > 0) {
@@ -126,6 +131,9 @@
             }
         });
         
+        // Tab switching
+        $(document).on('click', '.hmchat-tab', handleTabSwitch);
+        
         // Mark messages as seen when scrolling
         $(document).on('scroll', '.hmchat-messages-wrapper', debounce(markVisibleMessagesAsSeen, 2000));
     }
@@ -206,15 +214,26 @@
                 action: 'hmchat_fetch_messages',
                 nonce: hmchat_ajax.nonce,
                 project_id: chatState.projectId,
-                last_message_id: chatState.lastMessageId
+                last_message_id: chatState.lastMessageId,
+                last_log_id: chatState.lastLogId
             },
             success: function(response) {
                 if (response.success && response.data.messages.length > 0) {
-                    renderMessages(response.data.messages, true);
+                    // Update tracking IDs
+                    response.data.messages.forEach(function(msg) {
+                        if (msg.msg_type === 'system' && typeof msg.id === 'string' && msg.id.startsWith('log_')) {
+                            const logId = parseInt(msg.id.replace('log_', ''));
+                            chatState.lastLogId = Math.max(chatState.lastLogId, logId);
+                        } else if (msg.id && typeof msg.id === 'number') {
+                            chatState.lastMessageId = Math.max(chatState.lastMessageId, msg.id);
+                        }
+                    });
                     
-                    // Update last message ID
-                    const lastMsg = response.data.messages[response.data.messages.length - 1];
-                    chatState.lastMessageId = lastMsg.id;
+                    // Save lastLogId to localStorage
+                    const storageKey = 'hmchat_last_log_' + chatState.projectId;
+                    localStorage.setItem(storageKey, chatState.lastLogId);
+                    
+                    renderMessages(response.data.messages, true);
                     
                     // Scroll to bottom if chat is open
                     if (!chatState.isMinimized) {
@@ -932,6 +951,154 @@
     function showError(message) {
         // Simple alert for now - could be improved with a toast notification
         alert(message);
+    }
+    
+    /**
+     * Handle tab switching
+     */
+    function handleTabSwitch(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const $tab = $(this);
+        const tabType = $tab.data('tab');
+        
+        // Update active tab
+        $('.hmchat-tab').removeClass('active');
+        $tab.addClass('active');
+        
+        const $messagesWrapper = $('.hmchat-messages-wrapper');
+        const $inputWrapper = $('.hmchat-input-wrapper');
+        let $filesWrapper = $('.hmchat-files-wrapper');
+        
+        if (tabType === 'files') {
+            // Show files tab
+            $messagesWrapper.hide();
+            $inputWrapper.hide();
+            
+            if ($filesWrapper.length === 0) {
+                $filesWrapper = createFilesTab();
+                $('.hmchat-container').find('.hmchat-tabs').after($filesWrapper);
+            } else {
+                $filesWrapper.show();
+            }
+            
+            loadProjectFiles($filesWrapper);
+        } else {
+            // Show chat tab
+            $messagesWrapper.show();
+            $inputWrapper.show();
+            if ($filesWrapper.length > 0) {
+                $filesWrapper.hide();
+            }
+        }
+    }
+    
+    /**
+     * Create files tab wrapper
+     */
+    function createFilesTab() {
+        const $wrapper = $('<div>')
+            .addClass('hmchat-files-wrapper')
+            .css({
+                'flex': '1',
+                'overflow-y': 'auto',
+                'padding': '15px',
+                'background': '#f8f9fa'
+            })
+            .html('<p class="text-center">در حال بارگذاری...</p>');
+        
+        return $wrapper;
+    }
+    
+    /**
+     * Load project files
+     */
+    function loadProjectFiles($wrapper) {
+        $.ajax({
+            url: hmchat_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'hmchat_get_project_files',
+                nonce: hmchat_ajax.nonce,
+                project_id: chatState.projectId
+            },
+            success: function(response) {
+                if (response.success && response.data.files) {
+                    $wrapper.html(renderFilesTable(response.data.files));
+                } else {
+                    $wrapper.html('<p class="text-center" style="color: #999;">هیچ فایلی یافت نشد</p>');
+                }
+            },
+            error: function() {
+                $wrapper.html('<p class="text-center" style="color: #999;">خطا در بارگذاری فایلها</p>');
+            }
+        });
+    }
+    
+    /**
+     * Render files table
+     */
+    function renderFilesTable(files) {
+        if (!files || files.length === 0) {
+            return '<p class="text-center" style="color: #999;">هیچ فایلی یافت نشد</p>';
+        }
+        
+        let html = '<div class="hmchat-files-list">';
+        
+        files.forEach(function(file) {
+            const ext = file.file_name.split('.').pop().toLowerCase();
+            const icon = getFileIcon(ext);
+            const size = formatFileSize(file.file_size || 0);
+            
+            html += '<div class="hmchat-file-item">';
+            html += '<span class="hmchat-file-icon">' + icon + '</span>';
+            html += '<div class="hmchat-file-info">';
+            html += '<div class="hmchat-file-name">' + escapeHtml(file.file_name) + '</div>';
+            html += '<div class="hmchat-file-meta">' + size + '</div>';
+            html += '</div>';
+            html += '<a href="' + escapeHtml(file.file_path) + '" target="_blank" class="hmchat-file-btn">مشاهده</a>';
+            html += '</div>';
+        });
+        
+        html += '</div>';
+        return html;
+    }
+    
+    /**
+     * Get file icon by extension
+     */
+    function getFileIcon(ext) {
+        const icons = {
+            'dwg': '📐',
+            'dxf': '📐',
+            'pdf': '📄',
+            'jpg': '🖼️',
+            'jpeg': '🖼️',
+            'png': '🖼️',
+            'kml': '🗺️',
+            'kmz': '🗺️',
+            'txt': '📝'
+        };
+        return icons[ext] || '📎';
+    }
+    
+    /**
+     * Format file size
+     */
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+    
+    /**
+     * Escape HTML
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     /**
