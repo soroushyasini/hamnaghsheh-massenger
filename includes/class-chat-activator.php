@@ -28,7 +28,7 @@ class HMChat_Activator {
             project_id bigint(20) unsigned NOT NULL,
             user_id bigint(20) unsigned NOT NULL,
             message text NOT NULL,
-            message_type enum('text','system') DEFAULT 'text',
+            message_type enum('text','system','system_digest') DEFAULT 'text',
             is_edited tinyint(1) DEFAULT 0,
             edited_at datetime DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
