@@ -194,7 +194,7 @@ class HMChat_Messages {
         // Merge and sort chronologically
         $all_messages = array_merge($formatted_user_messages, $formatted_file_logs);
         usort($all_messages, function($a, $b) {
-            return strtotime($a['created_at']) - strtotime($b['created_at']);
+            return strtotime($a['created_at']) <=> strtotime($b['created_at']);
         });
         
         wp_send_json_success(array(

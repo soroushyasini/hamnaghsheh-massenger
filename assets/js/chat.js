@@ -45,7 +45,7 @@
         
         // Load lastLogId from localStorage
         const storageKey = 'hmchat_last_log_' + chatState.projectId;
-        chatState.lastLogId = parseInt(localStorage.getItem(storageKey)) || 0;
+        chatState.lastLogId = parseInt(localStorage.getItem(storageKey), 10) || 0;
         
         // Load initial messages
         if (hmchat_project.initial_messages && hmchat_project.initial_messages.length > 0) {
@@ -221,9 +221,8 @@
                 if (response.success && response.data.messages.length > 0) {
                     // Update tracking IDs
                     response.data.messages.forEach(function(msg) {
-                        if (msg.msg_type === 'system' && typeof msg.id === 'string' && msg.id.startsWith('log_')) {
-                            const logId = parseInt(msg.id.replace('log_', ''));
-                            chatState.lastLogId = Math.max(chatState.lastLogId, logId);
+                        if (msg.msg_type === 'system' && msg.log_id) {
+                            chatState.lastLogId = Math.max(chatState.lastLogId, msg.log_id);
                         } else if (msg.id && typeof msg.id === 'number') {
                             chatState.lastMessageId = Math.max(chatState.lastMessageId, msg.id);
                         }
@@ -979,10 +978,9 @@
             if ($filesWrapper.length === 0) {
                 $filesWrapper = createFilesTab();
                 $('.hmchat-container').find('.hmchat-tabs').after($filesWrapper);
-            } else {
-                $filesWrapper.show();
             }
             
+            $filesWrapper.show();
             loadProjectFiles($filesWrapper);
         } else {
             // Show chat tab
@@ -1000,12 +998,6 @@
     function createFilesTab() {
         const $wrapper = $('<div>')
             .addClass('hmchat-files-wrapper')
-            .css({
-                'flex': '1',
-                'overflow-y': 'auto',
-                'padding': '15px',
-                'background': '#f8f9fa'
-            })
             .html('<p class="text-center">در حال بارگذاری...</p>');
         
         return $wrapper;
